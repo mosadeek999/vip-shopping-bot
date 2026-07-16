@@ -25,7 +25,6 @@ Sections:
 
 
 1. IMPORTS & CONFIGURATION
-──────────────────────────────────────────────────────────────────────────────
 
 import os
 import re
