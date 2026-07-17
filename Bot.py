@@ -208,9 +208,10 @@ def format_results(query: str, items: list[dict]) -> str:
     header = f"🔍 {md_escape(query)} - Top {len(items)} Results\n"
     lines = [header]
     for i, item in enumerate(items, start=1):
-        title = md_escape(item["title"])
+      title = md_escape(item["title"])
         price = md_escape(item["price_str"]) if item["price_str"] else "N/A"
-        lines.append(f"{i}\. {title}\n 💰 {price}\n")
+lines.append(f"{i}\\. [{title}]({item['link'].replace(')', '\\)')})\n 💰 {price}")
+
     return "\n".join(lines)
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
