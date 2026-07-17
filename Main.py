@@ -24,9 +24,8 @@ Sections:
 11. Entry point
 """
 
-──────────────────────────────────────────────────────────────────────────────
 1. IMPORTS & CONFIGURATION
-──────────────────────────────────────────────────────────────────────────────
+
 
 import os
 import re
@@ -72,10 +71,11 @@ logging.basicConfig(
 format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
 level=logging.INFO,
 )
-logger = logging.getLogger(name)
+logger = logging.getLogger(__name__)
+
 keep_alive()
 
-── Secrets & env vars ────────────────────────────────────────────────────────
+Secrets & 
 
 TELEGRAM_BOT_TOKEN: str = os.environ.get("TELEGRAM_BOT_TOKEN", "")
 SERPER_API_KEY: str = os.environ.get("SERPER_API_KEY", "")
@@ -86,23 +86,22 @@ raise RuntimeError("TELEGRAM_BOT_TOKEN is not set. Add it in Replit Secrets.")
 if not SERPER_API_KEY:
 raise RuntimeError("SERPER_API_KEY is not set. Add it in Replit Secrets.")
 
-── Search settings ───────────────────────────────────────────────────────────
+Search settings
 
 SERPER_SHOPPING_URL = "https://google.serper.dev/shopping"
 SERPER_FETCH_COUNT = 20 # how many raw results to fetch from Serper
 MAX_RESULTS = 10 # how many filtered results to show the user
 _NO_ACCESS_MSG = "🚫 Access denied. Please use /subscribe to get access."
 
-── Subscription settings ─────────────────────────────────────────────────────
+Subscription settings
 
 STARS_PRICE = 100 # Telegram Stars per subscription period
 SUBSCRIPTION_DAYS = 30 # days granted per payment
-SUBSCRIBERS_FILE = Path(file).parent / "subscribers.json"
+SUBSCRIBERS_FILE = Path(__file__).resolve().parent / "subscribers.json"
 
 
-──────────────────────────────────────────────────────────────────────────────
 2. PERSISTENCE — subscribers.json
-──────────────────────────────────────────────────────────────────────────────
+
 Format: { "<user_id>": "<ISO-8601 expiry datetime UTC>" }
 The file is read on startup and updated on every new subscription.
 
@@ -136,12 +135,11 @@ if OWNER_ID:
 VIP_USERS.add(OWNER_ID)
 
 In-memory subscriber map {user_id: expiry_utc}
-SUBSCRIBERS: dict[int, datetime] = _load_subscribers()
+SUBSCRIBERS: dict[int, datetime] = 
+_load_subscribers()
 
 
-──────────────────────────────────────────────────────────────────────────────
 3. AUTH HELPERS
-──────────────────────────────────────────────────────────────────────────────
 
 def is_vip(user_id: int) -> bool:
 """Permanent free access — no subscription check needed."""
@@ -185,9 +183,9 @@ return "N/A"
 return expiry.strftime("%Y-%m-%d %H:%M UTC")
 
 
-──────────────────────────────────────────────────────────────────────────────
+
 4. PRICE PARSING
-──────────────────────────────────────────────────────────────────────────────
+
 
 def clean_price(raw_price: str) -> float:
 """
@@ -238,9 +236,9 @@ except ValueError:
 return float("inf")
 
 
-──────────────────────────────────────────────────────────────────────────────
+
 5. SMART FILTER — filter_results()
-──────────────────────────────────────────────────────────────────────────────
+
 ╔══════════════════════════════════════════════════════════════════════════╗
 ║ HOW TO CUSTOMISE THIS FUNCTION ║
 ║ ║
@@ -258,7 +256,7 @@ return float("inf")
 ║ Set to 0.7 to be more aggressive (drop anything < 70 % of avg). ║
 ╚══════════════════════════════════════════════════════════════════════════╝
 
-── Keyword blacklist ─────────────────────────────────────────────────────────
+ Keyword blacklist 
 Words that indicate accessories / non-primary products.
 Whole-word, case-insensitive matching is applied automatically.
 ACCESSORY_BLACKLIST: list[str] = [
@@ -299,7 +297,7 @@ r"\b(" + "|".join(re.escape(w) for w in ACCESSORY_BLACKLIST) + r")\b",
 re.IGNORECASE,
 )
 
-── Price outlier threshold ───────────────────────────────────────────────────
+ Price outlier threshold
 PRICE_OUTLIER_RATIO: float = 0.50 # drop items cheaper than 50 % of average
 
 
@@ -321,7 +319,7 @@ Items with unparseable prices (inf) are also dropped here.
 
 Items are sorted ascending by numeric price after both filters.
 """
-# ── Stage 1: keyword filter ───────────────────────────────────────────────
+#  Stage 1: keyword filter
 keyword_passed = [
 item for item in items
 if not _BLACKLIST_RE.search(item["title"])
@@ -330,7 +328,7 @@ dropped_kw = len(items) - len(keyword_passed)
 if dropped_kw:
 logger.debug("Keyword filter dropped %d items", dropped_kw)
 
-# ── Stage 2: price outlier filter ────────────────────────────────────────
+# ── Stage 2: price outlier filter 
 # Exclude items with unparseable prices first
 priced = [i for i in keyword_passed if i["numeric_price"] != float("inf")]
 
@@ -350,15 +348,13 @@ dropped_price, avg_price, threshold,
 else:
 price_passed = priced
 
-# ── Sort cheapest → most expensive ────────────────────────────────────────
+# Sort cheapest → most expensive 
 price_passed.sort(key=lambda x: x["numeric_price"])
 
 return price_passed
 
 
-──────────────────────────────────────────────────────────────────────────────
 6. SERPER API FETCH
-──────────────────────────────────────────────────────────────────────────────
 
 
 
@@ -393,9 +389,9 @@ return filter_results(processed_items)[:MAX_RESULTS]
 
 
 
-──────────────────────────────────────────────────────────────────────────────
+
 7. MARKDOWN FORMATTING
-──────────────────────────────────────────────────────────────────────────────
+
 
 _MD_SPECIAL = re.compile(r"([_*[]()~`>#+=|{}.!\-])")
 
@@ -423,11 +419,11 @@ lines.append(f"{i}\. {title}\n 💰 {price}\n")
 return "\n".join(lines)
 
 
-──────────────────────────────────────────────────────────────────────────────
-8. COMMAND HANDLERS
-──────────────────────────────────────────────────────────────────────────────
 
-── /start ─────────────────────────────────────────────────────────────────────
+8. COMMAND HANDLERS
+
+
+  /start
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 user_id = update.effective_user.id
@@ -450,8 +446,7 @@ f"Your status: {tag}\n\n"
 parse_mode=ParseMode.MARKDOWN_V2,
 )
 
-
-── /status ────────────────────────────────────────────────────────────────────
+ /status 
 
 async def status_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 user_id = update.effective_user.id
@@ -470,7 +465,7 @@ text = (
 await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN_V2)
 
 
-── /subscribe ─────────────────────────────────────────────────────────────────
+/subscribe 
 
 async def subscribe_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 user_id = update.effective_user.id
@@ -507,7 +502,7 @@ prices=[LabeledPrice("30-Day Access", STARS_PRICE)],
 logger.info("Invoice sent to user_id=%d", user_id)
 
 
-── /add_vip ───────────────────────────────────────────────────────────────────
+/add_vip
 
 async def add_vip_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 """Owner-only: add a user_id to the permanent VIP list."""
@@ -544,9 +539,9 @@ parse_mode=ParseMode.MARKDOWN_V2,
 )
 
 
-──────────────────────────────────────────────────────────────────────────────
+
 9. PAYMENT HANDLERS (Telegram Stars)
-──────────────────────────────────────────────────────────────────────────────
+
 
 async def pre_checkout_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 """
@@ -597,9 +592,9 @@ parse_mode=ParseMode.MARKDOWN_V2,
 )
 
 
-──────────────────────────────────────────────────────────────────────────────
+
 10. MESSAGE HANDLER — product search
-──────────────────────────────────────────────────────────────────────────────
+
 
 
 
@@ -646,9 +641,8 @@ await update.message.reply_text("An error occurred. Please try again later.")
 
 
 
-──────────────────────────────────────────────────────────────────────────────
+
 11. ENTRY POINT
-──────────────────────────────────────────────────────────────────────────────
 
 def main() -> None:
 logger.info("Starting VIP_Bot_Pro …")
@@ -678,5 +672,6 @@ drop_pending_updates=True,
 )
 
 
-if name == "main":
-main()
+if __name__ == "__main__":
+    main()
+
