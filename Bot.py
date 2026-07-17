@@ -270,7 +270,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     try:
         items = await fetch_shopping_results(query)
         if items:
-            await update.message.reply_text(format_results(query, items), parse_mode=ParseMode.MARKDOWN_V2)
+            await update.message.reply_text(format_results(query, items), parse_mode=None)
         else:
             await update.message.reply_text("No results found.")
     except Exception as e:
