@@ -199,10 +199,10 @@ async def fetch_shopping_results(query: str) -> list[dict]:
             })
     return filter_results(processed_items)[:MAX_RESULTS]
 
-_MD_SPECIAL = re.compile(r"([_*\[\]()~`>#+=|{}.!\-])")
-
 def md_escape(text: str) -> str:
-    return _MD_SPECIAL.sub(r"\\\1", text)
+    """هروب الحروف الخاصة لتنسيق MarkdownV2"""
+    _MD_SPECIAL = r"([_*\[\]()~`>#+=|{}.!\-])"
+    return re.sub(_MD_SPECIAL, r"\\\1", text)
 
 def format_results(query: str, items: list[dict]) -> str:
     header = f"🔍 {md_escape(query)} - Top {len(items)} Results\n"
@@ -210,9 +210,13 @@ def format_results(query: str, items: list[dict]) -> str:
     for i, item in enumerate(items, start=1):
         title = md_escape(item["title"])
         price = md_escape(item["price_str"]) if item.get("price_str") else "N/A"
-        lines.append(f"{i}\\. [{title}]({item['link'].replace(')', '\\)')})\n 💰 {price}")
+        
+        # Link cleaning (handling parentheses)
+        link = item['link'].replace(")", "\\)")
+        
+        lines.append(f"{i}\\. [{title}]({link})\n 💰 {price}")
+    
     return "\n".join(lines)
-
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user_id = update.effective_user.id
